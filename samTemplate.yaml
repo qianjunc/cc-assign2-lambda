@@ -1,0 +1,44 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: CD Demo Lambda
+Resources:
+  assign2Lf1copy:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: assign2-lf1copy
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.7
+      CodeUri: ./LambdaCode
+      Description: 'Lambda function for assign2 lf1'
+      MemorySize: 128
+      Timeout: 30
+      Role: 'arn:aws:iam::033562404598:role/service-role/assign2-lf1-role-qrqqskdu'
+      Events:
+        UploadPut:
+          Type: Api
+          Properties:
+            Path: /upload
+            Method: put
+      Environment:
+        Variables:
+          REGION: us-east-1
+  assign2Lf2copy:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: assign2-lf2copy
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.7
+      CodeUri: ./LambdaCode
+      Description: 'Lambda function for assign2 lf2'
+      MemorySize: 128
+      Timeout: 30
+      Role: 'arn:aws:iam::033562404598:role/service-role/assign2-lf2-role-hxjppjes'
+      Events:
+        SearchGet:
+          Type: Api
+          Properties:
+            Path: /search
+            Method: get
+      Environment:
+        Variables:
+          REGION: us-east-1
