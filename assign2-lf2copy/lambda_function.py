@@ -10,12 +10,36 @@ url = host + '/' + index + '/_search'
 headers = { "Content-Type": "application/json" }
 auth = ('hando', '0912Namjoon!')
 
+SINGULAR_UNINFLECTED = ['gas', 'asbestos', 'womens', 'childrens', 'sales', 'physics']
+
+SINGULAR_SUFFIX = [
+    ('people', 'person'),
+    ('men', 'man'),
+    ('wives', 'wife'),
+    ('menus', 'menu'),
+    ('us', 'us'),
+    ('ss', 'ss'),
+    ('is', 'is'),
+    ("'s", "'s"),
+    ('ies', 'y'),
+    ('ies', 'y'),
+    ('es', 'e'),
+    ('s', '')
+]
+def singularize_word(word):
+    for ending in SINGULAR_UNINFLECTED:
+        if word.lower().endswith(ending):
+            return word
+    for suffix, singular_suffix in SINGULAR_SUFFIX:
+        if word.endswith(suffix):
+            return word[:-len(suffix)] + singular_suffix
+    return word
 
 def lambda_handler(event, context):
     print("event: ")
     print(event)
     last_user_message = event['q']
-    # last_user_message = "show me car and leaf"
+    # last_user_message = "show me car and tree"
     
     # change this to the message that user submits on 
     # your website using the 'event' variable
@@ -25,8 +49,11 @@ def lambda_handler(event, context):
                                 userId='testuser',
                                 inputText=last_user_message)
     
-    msg_from_lex = response['message']
+    msg_from_lex = response['message'].lower()
     keywords = msg_from_lex.split(" ")
+    
+    for i in range(len(keywords)):
+        keywords[i] = singularize_word(keywords[i])
     
     # find result from opensearch
     bucket_url = "https://assign2-b2.s3.amazonaws.com/"
@@ -43,14 +70,6 @@ def lambda_handler(event, context):
         }
       }
     }
-    # query = {
-    #         "size": 1,
-    #         "query": {
-    #             "function_score" : {
-    #             "query" : { "query_string": { "query": 'test5.jpg' } }
-    #             }
-    #         }
-    # }
 
     esResp = requests.get(url, auth=auth, headers=headers, data=json.dumps(query))
     data = json.loads(esResp.text)
@@ -58,14 +77,18 @@ def lambda_handler(event, context):
     print(data)
     
     photos = []
+    objkey = []
     
     esData = data["hits"]["hits"]
     for photo in esData:
-        photo_detail = {
-            'url': bucket_url+photo['_source']['objectKey'],
-            'labels': photo['_source']['labels']
-        }
-        photos.append(photo_detail)
+        if (bucket_url+photo['_source']['objectKey']) not in objkey:
+            photo_detail = {
+               'url': bucket_url+photo['_source']['objectKey'],
+               'labels': photo['_source']['labels']
+            }
+            
+            photos.append(photo_detail)
+            objkey.append(photo_detail['url'])
     print(photos)
     
     if len(photos) > 0:
